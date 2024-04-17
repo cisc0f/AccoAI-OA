@@ -1,6 +1,6 @@
 import os
 from flask import Flask, jsonify, request
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 from openai import OpenAI, RateLimitError
 from dotenv import load_dotenv
 from datetime import datetime
@@ -36,7 +36,7 @@ def get_health():
     """Return the health status of the API."""
     return jsonify({'status': 'OK'}), 200
 
-# Get the histories
+# Get history
 @app.route("/api/history", methods=['GET'])
 def get_history():
     """Return the history of the chat."""

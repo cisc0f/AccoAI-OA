@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { deleteRequest, get, streamPost } from "./utils/api";
 import { v4 } from 'uuid';
 import Loading from "./components/Loading";
@@ -26,6 +26,7 @@ export default function Home() {
   const [output, setOutput] = useState<ChatHistory>({});
   const [apiStatus, setApiStatus] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const promptRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // Get API Health status
@@ -37,10 +38,6 @@ export default function Home() {
 
         // Get history if the API is up 
         get('/history').then((history) => {
-          // Create a new chat if the history is empty
-          if (history.length < 1) {
-            createNewChat();
-          }
           
           // Sort the chat dict by timestamp (inefficient, can be done in the backend)
           const sortedChatHistory: ChatHistory = {};
@@ -52,7 +49,6 @@ export default function Home() {
 
           // Save sorted history
           setOutput(sortedChatHistory);
-          console.log(sortedChatHistory);
           // Set active chat to the last one
           setActiveChat(Object.keys(sortedChatHistory)[Object.keys(sortedChatHistory).length - 1]);
         }).catch((error) => {
@@ -81,9 +77,14 @@ export default function Home() {
     if (prompt.trim() === '') {
       return;
     }
-    // If no chat exists create a new one
-    if (Object.keys(output).length < 1) {
+    // If no chat is selected create a new one
+    if (activeChat === undefined || activeChat === '') {
       createNewChat();
+    }
+
+    // Update chat title if it's still untitled
+    if (output[activeChat].title === "") {
+      output[activeChat].title = prompt;
     }
 
     setIsLoading(true);
@@ -126,19 +127,13 @@ export default function Home() {
           [activeChat]: {
             ...currentChatHistory,
             content: [
-              ...(prevHistory[activeChat].content || []),
+              ...(prevHistory[activeChat]?.content || []),
               message
             ]
           }
         };
       }
     });
-  };
-  
-  
-  // Select active chat
-  const selectChat = (chatId: string) => {
-    setActiveChat(chatId);
   };
 
   const createNewChat = () => {
@@ -153,6 +148,10 @@ export default function Home() {
       }
     }));
     setActiveChat(newChatId.toString());
+    // Focus the prompt input
+    if (promptRef.current){
+      promptRef.current.focus();
+    }
   };
 
   const deleteChat = (chatId: string) => {
@@ -185,7 +184,7 @@ export default function Home() {
               {Object.keys(output).reverse().map((chatIndex) => (
                 <li 
                   key={chatIndex} 
-                  onClick={() => selectChat(chatIndex)} 
+                  onClick={() => setActiveChat(chatIndex)} 
                   className={`cursor-pointer ${activeChat === chatIndex ? 'bg-green-500 text-black' : 'bg-neutral-800 text-white'} w-full p-2 px-3 mt-3 text-sm rounded-lg`}>
                     <div className="flex flex-row justify-between items-center">
                       <div className="flex flex-col justify-center items-start">
@@ -232,6 +231,7 @@ export default function Home() {
         <div className="sticky bottom-7 items-center">
           <form className="w-full flex flex-row justify-center gap-5" onSubmit={invokeChatEndpoint}>
             <input
+              ref={promptRef}
               type="text"
               placeholder="Enter your prompt here"
               className="border border-neutral-500 bg-neutral-900 p-3 outline-none ml-10 rounded-xl flex-1"
