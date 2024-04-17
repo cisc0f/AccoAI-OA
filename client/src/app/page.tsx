@@ -83,7 +83,7 @@ export default function Home() {
     }
 
     // Update chat title if it's still untitled
-    if (output[activeChat].title === "") {
+    if (output[activeChat]?.title === "") {
       output[activeChat].title = prompt;
     }
 
