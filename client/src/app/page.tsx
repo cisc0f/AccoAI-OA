@@ -143,7 +143,7 @@ export default function Home() {
       [newChatId.toString()]: {
         chat_id: newChatId.toString(),
         content: [],
-        timestamp: Date.now(),
+        timestamp: Date.now() / 1000,
         title: prompt
       }
     }));
